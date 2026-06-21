@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Publish HTML on GitHub Pages</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --panel:#10172a;
+    --line:#1e2942;
+    --cyan:#22d3ee;
+    --magenta:#e635a8;
+    --violet:#8b5cf6;
+    --lime:#a3e635;
+    --text:#e6edf6;
+    --muted:#8b97b0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 20% -10%, #16203a 0%, transparent 60%),
+               radial-gradient(1000px 600px at 100% 10%, #1a1233 0%, transparent 55%),
+               var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    padding:48px 24px 80px;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:1150px;margin:0 auto}
+  header{text-align:center;margin-bottom:14px}
+  h1{
+    font-size:2.5rem;font-weight:800;letter-spacing:-1px;
+    background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 40px rgba(139,92,246,.25);
+  }
+  .sub{color:var(--muted);margin-top:8px;font-size:1rem}
+  .liveurl{
+    display:inline-block;margin-top:14px;padding:7px 16px;border-radius:30px;
+    font-size:.82rem;color:var(--lime);
+    border:1px solid rgba(163,230,53,.35);
+    background:rgba(163,230,53,.06);
+    box-shadow:0 0 20px rgba(163,230,53,.12);
+  }
+  .liveurl code{color:var(--lime);font-weight:600}
+
+  /* progress bar */
+  .progress{
+    height:6px;border-radius:30px;background:var(--line);
+    margin:34px auto 30px;max-width:900px;overflow:hidden;position:relative;
+  }
+  .progress .fill{
+    height:100%;width:10%;border-radius:30px;
+    background:linear-gradient(90deg,var(--cyan),var(--magenta));
+    box-shadow:0 0 18px var(--magenta);
+    transition:width .45s cubic-bezier(.6,.1,.2,1);
+  }
+
+  /* stepper rail */
+  .rail{
+    display:flex;gap:6px;justify-content:center;flex-wrap:wrap;
+    margin-bottom:34px;
+  }
+  .node{
+    position:relative;cursor:pointer;
+    width:54px;height:54px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:1.05rem;
+    background:var(--panel);border:2px solid var(--line);
+    color:var(--muted);transition:.3s;flex-shrink:0;
+  }
+  .node:hover{transform:translateY(-3px);border-color:var(--cyan);color:var(--cyan)}
+  .node.active{
+    color:#06121a;border-color:transparent;
+    background:linear-gradient(135deg,var(--cyan),var(--violet));
+    box-shadow:0 0 26px rgba(34,211,238,.55);transform:translateY(-3px) scale(1.07);
+  }
+  .node.done{border-color:var(--lime);color:var(--lime)}
+  .node.done::after{
+    content:"✓";position:absolute;top:-6px;right:-6px;
+    width:20px;height:20px;border-radius:50%;font-size:.7rem;
+    background:var(--lime);color:#0a0e1a;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 12px var(--lime);
+  }
+  .connector{align-self:center;width:22px;height:2px;background:var(--line)}
+
+  /* detail card */
+  .card{
+    background:linear-gradient(180deg,rgba(34,211,238,.04),rgba(230,53,168,.03)),var(--panel);
+    border:1px solid var(--line);border-radius:20px;
+    padding:34px 36px;position:relative;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+    animation:pop .4s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .card::before{
+    content:"";position:absolute;inset:0;border-radius:20px;padding:1px;
+    background:linear-gradient(120deg,var(--cyan),var(--magenta),var(--violet));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;opacity:.35;pointer-events:none;
+  }
+  .badge{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:.78rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);
+    font-weight:700;margin-bottom:10px;
+  }
+  .badge .dot{width:30px;height:30px;border-radius:50%;
+    background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06121a;
+    display:flex;align-items:center;justify-content:center;font-size:.95rem;
+    box-shadow:0 0 16px rgba(34,211,238,.5)}
+  .card h2{font-size:1.55rem;font-weight:800;margin-bottom:14px;line-height:1.25}
+  .card p{color:#cdd6e6;line-height:1.7;font-size:1.02rem}
+  .card .where{
+    margin-top:18px;font-size:.9rem;color:var(--muted);
+    border-left:3px solid var(--violet);padding-left:14px;
+  }
+  .card .where b{color:var(--violet)}
+
+  .tip{
+    margin-top:22px;padding:16px 18px;border-radius:14px;
+    background:rgba(163,230,53,.07);border:1px solid rgba(163,230,53,.3);
+    display:flex;gap:12px;align-items:flex-start;
+  }
+  .tip .ic{font-size:1.3rem;filter:drop-shadow(0 0 8px var(--lime))}
+  .tip span{color:#dff3b8;font-size:.95rem;line-height:1.55}
+  .tip.warn{background:rgba(230,53,168,.07);border-color:rgba(230,53,168,.35)}
+  .tip.warn span{color:#f8c8e6}
+
+  .nav{display:flex;justify-content:space-between;margin-top:26px;gap:14px}
+  .btn{
+    flex:1;padding:13px;border:none;border-radius:12px;cursor:pointer;
+    font-weight:700;font-size:.95rem;transition:.25s;color:var(--text);
+    background:var(--panel);border:1px solid var(--line);
+  }
+  .btn:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);transform:translateY(-2px)}
+  .btn:disabled{opacity:.35;cursor:not-allowed}
+  .btn.primary{
+    background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06121a;border:none;
+    box-shadow:0 0 22px rgba(139,92,246,.4)}
+  .btn.primary:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(139,92,246,.6);color:#06121a}
+
+  .counter{text-align:center;color:var(--muted);font-size:.85rem;margin-top:16px}
+  @media(max-width:600px){
+    h1{font-size:1.8rem}.node{width:44px;height:44px;font-size:.9rem}
+    .connector{width:10px}.card{padding:26px 22px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Publish an HTML Page on GitHub Pages</h1>
+    <p class="sub">Click any step, or use Next to walk through it. New repo, browser-only, no command line.</p>
+    <div class="liveurl">Goal: a live page at <code>username.github.io/my-web-page</code></div>
+  </header>
+
+  <div class="progress"><div class="fill" id="fill"></div></div>
+
+  <div class="rail" id="rail"></div>
+
+  <div class="card" id="card"></div>
+
+  <div class="nav">
+    <button class="btn" id="prev">&larr; Previous</button>
+    <button class="btn primary" id="next">Next &rarr;</button>
+  </div>
+  <div class="counter" id="counter"></div>
+</div>
+
+<script>
+const steps = [
+  {
+    t:"Open the New Repository screen",
+    body:"On github.com while logged in, click the <b>+</b> icon in the top-right corner of the page, then choose <b>New repository</b> from the dropdown.",
+    where:"Top-right of any GitHub page &rarr; <b>+</b> &rarr; New repository",
+    tip:{type:"ok",ic:"💡",txt:"This is the same menu used for gists and organizations. The repository is the container that will hold your HTML file."}
+  },
+  {
+    t:"Name it and make it Public",
+    body:"Type a repository name such as <b>my-web-page</b>. Set the visibility to <b>Public</b>.",
+    where:"Repository name field + <b>Public</b> radio button",
+    tip:{type:"warn",ic:"⚠️",txt:"Free GitHub Pages requires the repo to be Public. A Private repo needs a paid plan to publish a page."}
+  },
+  {
+    t:"Add a README and create the repo",
+    body:"Check the box <b>Add a README file</b> (this gives the repo an initial commit so Pages works smoothly), then click the green <b>Create repository</b> button.",
+    where:"Bottom of the page &rarr; <b>Create repository</b>",
+    tip:{type:"ok",ic:"💡",txt:"The README is optional in theory, but checking it avoids an empty-repo state and makes the next steps appear immediately."}
+  },
+  {
+    t:"Start a file upload",
+    body:"On your new repo's main page, click <b>Add file</b> near the top-right of the file list, then select <b>Upload files</b>.",
+    where:"Repo home &rarr; <b>Add file</b> &rarr; Upload files",
+    tip:{type:"ok",ic:"💡",txt:"Add file also has a Create new file option if you'd rather paste HTML directly into the browser editor."}
+  },
+  {
+    t:"Drag in your HTML file",
+    body:"Drag your HTML file into the upload area, or click <b>choose your files</b>. Name the file <b>index.html</b>.",
+    where:"Upload drop zone",
+    tip:{type:"warn",ic:"⚠️",txt:"Naming it index.html is what makes the page load automatically at the root URL. Any other name forces you to append it, e.g. /page.html."}
+  },
+  {
+    t:"Commit the upload",
+    body:"Scroll to the bottom and click <b>Commit changes</b>. Your file is now saved in the repository.",
+    where:"Bottom of upload page &rarr; <b>Commit changes</b>",
+    tip:{type:"ok",ic:"💡",txt:"A commit is just a saved snapshot. Leave the default commit message; it doesn't affect publishing."}
+  },
+  {
+    t:"Open the Settings tab",
+    body:"Back on the repo's main page, click <b>Settings</b> in the horizontal menu running across the top of the repository.",
+    where:"Repo top menu &rarr; <b>Settings</b>",
+    tip:{type:"ok",ic:"💡",txt:"Settings is the right-most item in that row (Code, Issues, Pull requests … Settings)."}
+  },
+  {
+    t:"Go to the Pages section",
+    body:"In the left-hand sidebar of Settings, click <b>Pages</b> (under the Code and automation group).",
+    where:"Settings left sidebar &rarr; <b>Pages</b>",
+    tip:{type:"ok",ic:"💡",txt:"This is GitHub Pages, the free static hosting feature built into every repo."}
+  },
+  {
+    t:"Select branch and save",
+    body:"Under <b>Build and deployment</b> &rarr; Source, keep <b>Deploy from a branch</b>. Set Branch to <b>main</b> and folder to <b>/ (root)</b>, then click <b>Save</b>.",
+    where:"Pages &rarr; Branch: <b>main</b> &rarr; <b>/ (root)</b> &rarr; Save",
+    tip:{type:"warn",ic:"⚠️",txt:"If the branch dropdown shows 'None', your file wasn't committed. Go back and confirm step 6 completed."}
+  },
+  {
+    t:"Wait, then open your live URL",
+    body:"Wait about 1 to 2 minutes, then refresh the Pages screen. A banner appears at the top with your live link: <b>username.github.io/my-web-page</b>. Click it to view your published page.",
+    where:"Top of the Pages screen &rarr; live URL banner",
+    tip:{type:"ok",ic:"🚀",txt:"First publish can take a couple of minutes. If you see a 404, wait and refresh once more, the deploy is still finishing."}
+  }
+];
+
+let cur = 0;
+const rail = document.getElementById('rail');
+const card = document.getElementById('card');
+const fill = document.getElementById('fill');
+const counter = document.getElementById('counter');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+
+// build rail
+steps.forEach((s,i)=>{
+  const n=document.createElement('div');
+  n.className='node';n.textContent=i+1;
+  n.onclick=()=>go(i);
+  rail.appendChild(n);
+  if(i<steps.length-1){
+    const c=document.createElement('div');c.className='connector';rail.appendChild(c);
+  }
+});
+
+function go(i){cur=i;render();}
+
+function render(){
+  const s=steps[cur];
+  // nodes
+  [...rail.querySelectorAll('.node')].forEach((n,i)=>{
+    n.className='node';
+    if(i<cur)n.classList.add('done');
+    if(i===cur)n.classList.add('active');
+  });
+  // progress
+  fill.style.width=((cur+1)/steps.length*100)+'%';
+  // card
+  const tipClass=s.tip.type==='warn'?'tip warn':'tip';
+  card.innerHTML=`
+    <div class="badge"><span class="dot">${cur+1}</span> Step ${cur+1} of ${steps.length}</div>
+    <h2>${s.t}</h2>
+    <p>${s.body}</p>
+    <div class="where">📍 <b>Where:</b> ${s.where}</div>
+    <div class="${tipClass}"><div class="ic">${s.tip.ic}</div><span>${s.tip.txt}</span></div>
+  `;
+  prevBtn.disabled=cur===0;
+  nextBtn.textContent = cur===steps.length-1 ? 'Finish ✓' : 'Next →';
+  counter.textContent=`${cur+1} / ${steps.length}`;
+}
+
+prevBtn.onclick=()=>{if(cur>0)go(cur-1)};
+nextBtn.onclick=()=>{if(cur<steps.length-1)go(cur+1); else {[...rail.querySelectorAll('.node')].forEach(n=>n.classList.add('done'));}};
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'&&cur<steps.length-1)go(cur+1);
+  if(e.key==='ArrowLeft'&&cur>0)go(cur-1);
+});
+
+render();
+</script>
+</body>
+</html>
